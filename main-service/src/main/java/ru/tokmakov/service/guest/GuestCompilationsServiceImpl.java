@@ -25,33 +25,36 @@ public class GuestCompilationsServiceImpl implements GuestCompilationsService {
     @Transactional(readOnly = true)
     public List<CompilationDto> findCompilations(Boolean pinned, Integer from, Integer size) {
         log.info("Fetching compilations with pinned: {}, from: {}, size: {}", pinned, from, size);
-        Pageable pageable = PageRequest.of(from / size, size);
-        Page<Compilation> compilations = pinned == null ?
-                compilationRepository.findAll(pageable)
-                :
-                compilationRepository.findByPinned(pinned, pageable);
+        Page<Compilation> compilations = findCompilationByParams(from, size, pinned);
+        log.info("Find compilations successfully founded {} compilations", compilations.getSize());
+        List<CompilationDto> compilationDtoList = CompilationMapper.toCompilationDtoList(compilations);
+        log.info("Fetched {} compilations", compilationDtoList.size());
+        return compilationDtoList;
+    }
 
-        List<CompilationDto> compilationDtos = compilations.stream()
-                .map(CompilationMapper::toCompilationDto)
-                .toList();
-        log.info("Fetched {} compilations", compilationDtos.size());
-        return compilationDtos;
+    private Page<Compilation> findCompilationByParams(Integer from, Integer size, Boolean pinned) {
+        Pageable pageable = PageRequest.of(from / size, size);
+        return pinned == null ? compilationRepository.findAll(pageable) :
+                pinned ? compilationRepository.findByPinnedTrue(pageable)
+                        : compilationRepository.findByPinnedFalse(pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CompilationDto findCompilationsByCompId(Long compId) {
         log.info("Fetching compilation by compId: {}", compId);
-        Compilation compilation = compilationRepository.findById(compId)
-                .orElseThrow(() -> {
-                    log.error("Compilation with id={} not found", compId);
-                    return new NotFoundException("Compilation with id=" + compId + " was not found");
-                });
-
+        Compilation compilation = findCompilationById(compId);
         log.info("Compilation with id={} found: {}", compId, compilation);
-
         CompilationDto compilationDto = CompilationMapper.toCompilationDto(compilation);
         log.info("Converted compilation to DTO: {}", compilationDto);
         return compilationDto;
+    }
+
+    private Compilation findCompilationById(Long id) {
+        return compilationRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Compilation with id={} not found", id);
+                    return new NotFoundException("Compilation with id=" + id + " was not found");
+                });
     }
 }
