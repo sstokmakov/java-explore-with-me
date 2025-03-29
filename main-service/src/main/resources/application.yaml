@@ -1,0 +1,17 @@
+server:
+  port: 8080
+spring:
+  sql:
+    init:
+      schema-locations: classpath:schema.sql
+      mode: always
+  datasource:
+    url: jdbc:postgresql://localhost:5432/java-explore-with-me-main
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  kafka:
+    bootstrap-servers: kafka:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
